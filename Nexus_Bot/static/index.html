@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Offline Emergency Intelligence Assistant</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root {
+    --bg: #0f172a;
+    --card: rgba(255, 255, 255, 0.08);
+    --accent: #ef4444;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --border: rgba(255,255,255,0.15);
+}
+
+* {
+    box-sizing: border-box;
+    font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #1e293b, #020617);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 1000px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.header h1 {
+    font-size: 2.3rem;
+    margin: 0;
+}
+
+.header p {
+    color: var(--muted);
+    margin-top: 8px;
+}
+
+.glass {
+    background: var(--card);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(14px);
+    border-radius: 18px;
+    padding: 20px;
+}
+
+textarea {
+    width: 100%;
+    height: 160px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    color: var(--text);
+    resize: none;
+    font-size: 15px;
+}
+
+textarea::placeholder {
+    color: var(--muted);
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 15px;
+}
+
+button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 12px 26px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s;
+}
+
+button:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+.loader {
+    display: none;
+    text-align: center;
+    margin: 30px 0;
+    color: var(--muted);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+    margin-top: 25px;
+}
+
+.card h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    color: #fecaca;
+}
+
+.card pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font-size: 14px;
+    color: var(--text);
+}
+
+footer {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 13px;
+    color: var(--muted);
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>🚨 Offline Emergency Intelligence Assistant</h1>
+        <p>AI-powered emergency analysis — works fully offline</p>
+    </div>
+
+    <div class="glass">
+        <textarea id="inputText" placeholder="Paste emergency report here..."></textarea>
+
+        <div class="actions">
+            <button onclick="analyze()">Analyze Emergency</button>
+        </div>
+    </div>
+
+    <div class="loader" id="loader">🔍 Analyzing emergency situation...</div>
+
+    <div class="grid" id="outputGrid" style="display:none;">
+        <div class="glass card">
+            <h3>📌 Summary</h3>
+            <pre id="summary"></pre>
+        </div>
+
+        <div class="glass card">
+            <h3>⚠ Emergency Type</h3>
+            <pre id="type"></pre>
+        </div>
+
+        <div class="glass card">
+            <h3>🛠 Immediate Actions</h3>
+            <pre id="actionsText"></pre>
+        </div>
+    </div>
+
+    <footer>
+        Local LLM • No Internet • Hackathon Ready
+    </footer>
+
+</div>
+
+<script>
+function analyze() {
+    const text = document.getElementById("inputText").value.trim();
+    if (!text) {
+        alert("Please enter emergency text.");
+        return;
+    }
+
+    document.getElementById("loader").style.display = "block";
+    document.getElementById("outputGrid").style.display = "none";
+
+    fetch("/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("outputGrid").style.display = "grid";
+
+        const result = data.analysis || "";
+
+        document.getElementById("summary").textContent =
+            extract(result, "Summary:");
+
+        document.getElementById("type").textContent =
+            extract(result, "Emergency Type:");
+
+        document.getElementById("actionsText").textContent =
+            extract(result, "Immediate Actions:");
+    })
+    .catch(() => {
+        document.getElementById("loader").textContent = "❌ Error analyzing emergency";
+    });
+}
+
+function extract(text, section) {
+    const start = text.indexOf(section);
+    if (start === -1) return "—";
+    return text.slice(start + section.length).split("\n\n")[0].trim();
+}
+</script>
+
+</body>
+</html>
